@@ -1,4 +1,4 @@
-package dns
+package modules
 
 import (
 	"context"
@@ -6,33 +6,35 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"recongraph/internal/recon"
 )
 
-type Result struct {
+type DNSResult struct {
 	NS []string
 }
 
-type Resolver interface {
+type DNSResolver interface {
 	LookupNS(ctx context.Context, name string) ([]*net.NS, error)
 }
 
-type Module struct {
-	resolver Resolver
+type DNSModule struct {
+	resolver DNSResolver
 }
 
-func New(resolver Resolver) *Module {
-	return &Module{resolver: resolver}
+func NewDNS(resolver DNSResolver) *DNSModule {
+	return &DNSModule{resolver: resolver}
 }
 
-func (m *Module) Name() string { return "dns" }
+func (m *DNSModule) Name() string { return "dns" }
 
-func (m *Module) Run(ctx context.Context, domain string) (any, error) {
+func (m *DNSModule) Run(ctx context.Context, domain string) (recon.ModuleResult, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	records, err := m.resolver.LookupNS(ctx, domain)
 	if err != nil {
-		return Result{}, err
+		return DNSResult{}, err
 	}
 
 	uniq := map[string]struct{}{}
@@ -52,6 +54,5 @@ func (m *Module) Run(ctx context.Context, domain string) (any, error) {
 		out = append(out, ns)
 	}
 	sort.Strings(out)
-	return Result{NS: out}, nil
+	return DNSResult{NS: out}, nil
 }
-

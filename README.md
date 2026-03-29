@@ -13,7 +13,7 @@ Production-grade starter MVP that:
 
 ```mermaid
 flowchart LR
-  U[User] -->|domain| CLI[Go CLI<br/>cmd/recongraph]
+  U[User] -->|domain| CLI[Go CLI<br/>cli/]
   CLI --> AGG[Aggregator<br/>internal/aggregator]
 
   AGG -->|parallel| DNS[DNSModule<br/>NS lookup]
@@ -57,15 +57,15 @@ flowchart TB
   end
 
   subgraph STRAT[Strategy implementations (modules)]
-    DNS[DNSModule<br/>internal/modules/dns<br/>returns dns.Result]
-    IP[IPModule<br/>internal/modules/ip<br/>returns ip.Result]
-    ASN[ASNModule<br/>internal/modules/asn<br/>returns asn.Result]
+    DNS[DNSModule<br/>internal/modules<br/>returns DNSResult]
+    IP[IPModule<br/>internal/modules<br/>returns IPResult]
+    ASN[ASNModule<br/>internal/modules<br/>returns ASNResult]
   end
 
   subgraph DI[Dependency Inversion (ports/adapters)]
     RES[net.Resolver<br/>(adapter)]
-    AP[asn.Provider interface<br/>(port)]
-    MOCK[MockProvider<br/>internal/modules/asn]
+    AP[ASNProvider interface<br/>(port)]
+    MOCK[MockASNProvider<br/>internal/modules]
   end
 
   subgraph ORCH[Orchestration (use-case)]
@@ -76,7 +76,7 @@ flowchart TB
 
   subgraph FLOW[Runtime flow]
     PAR[goroutines run modules in parallel]
-    MERGE[Aggregator merges typed results<br/>dns.Result + ip.Result]
+    MERGE[Aggregator merges typed results<br/>DNSResult + IPResult]
     DEP[ASN runs after IPs exist<br/>(dependency)]
     OUT[models.ReconOutput -> JSON]
   end
@@ -104,10 +104,10 @@ flowchart TB
 ## Repo layout
 
 ### Go (recon engine)
-- `cmd/recongraph/main.go`: CLI entrypoint
+- `cli/main.go`: CLI entrypoint
 - `internal/recon`: domain-level interfaces (Strategy)
-- `internal/modules/*`: concrete recon modules (DNS/IP/ASN)
-- `internal/aggregator`: orchestration + JSON contract assembly
+- `internal/modules`: concrete recon modules (DNS/IP/ASN)
+- `internal/aggregator.go`: orchestration + JSON contract assembly
 - `pkg/models`: cross-layer JSON model
 
 ### Python (graph analyzer)
@@ -124,7 +124,7 @@ flowchart TB
 From repo root:
 
 ```powershell
-go run .\cmd\recongraph\ -domain example.com
+go run .\cli\ -domain example.com
 ```
 
 This prints the output path (default: `out/<domain>.json`).
@@ -132,7 +132,7 @@ This prints the output path (default: `out/<domain>.json`).
 Optional flags:
 
 ```powershell
-go run .\cmd\recongraph\ -domain example.com -out out\example.com.json -timeout 15s -asn-provider mock -pretty=true
+go run .\cli\ -domain example.com -out out\example.com.json -timeout 15s -asn-provider mock -pretty=true
 ```
 
 ### 2) Analyze (Python) → insights + optional exports

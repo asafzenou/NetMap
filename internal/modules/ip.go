@@ -1,4 +1,4 @@
-package ip
+package modules
 
 import (
 	"context"
@@ -6,43 +6,44 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"recongraph/internal/recon"
 )
 
-type Result struct {
+type IPResult struct {
 	IPs []string
 }
 
-type Resolver interface {
+type IPResolver interface {
 	LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error)
 }
 
-type Module struct {
-	resolver Resolver
+type IPModule struct {
+	resolver IPResolver
 }
 
-func New(resolver Resolver) *Module {
-	return &Module{resolver: resolver}
+func NewIP(resolver IPResolver) *IPModule {
+	return &IPModule{resolver: resolver}
 }
 
-func (m *Module) Name() string { return "ip" }
+func (m *IPModule) Name() string { return "ip" }
 
-func (m *Module) Run(ctx context.Context, domain string) (any, error) {
+func (m *IPModule) Run(ctx context.Context, domain string) (recon.ModuleResult, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	addrs, err := m.resolver.LookupIPAddr(ctx, domain)
 	if err != nil {
-		return Result{}, err
+		return IPResult{}, err
 	}
 
 	uniq := map[string]struct{}{}
 	for _, a := range addrs {
-		ip := a.IP
-		if ip == nil {
+		ipAddr := a.IP
+		if ipAddr == nil {
 			continue
 		}
-		// Normalize string representation.
-		s := strings.TrimSpace(ip.String())
+		s := strings.TrimSpace(ipAddr.String())
 		if s == "" {
 			continue
 		}
@@ -54,6 +55,5 @@ func (m *Module) Run(ctx context.Context, domain string) (any, error) {
 		out = append(out, s)
 	}
 	sort.Strings(out)
-	return Result{IPs: out}, nil
+	return IPResult{IPs: out}, nil
 }
-

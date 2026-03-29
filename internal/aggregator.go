@@ -7,9 +7,7 @@ import (
 	"net"
 	"time"
 
-	"recongraph/internal/modules/asn"
-	"recongraph/internal/modules/dns"
-	"recongraph/internal/modules/ip"
+	"recongraph/internal/modules"
 	"recongraph/internal/recon"
 	"recongraph/pkg/models"
 )
@@ -32,24 +30,23 @@ func New(resolver *net.Resolver) *Aggregator {
 }
 
 // Collect performs recon for a single domain and returns the JSON contract.
-func (a *Aggregator) Collect(ctx context.Context, domain string, asnProvider asn.Provider) (models.ReconOutput, error) {
+func (a *Aggregator) Collect(ctx context.Context, domain string, asnProvider modules.ASNProvider) (models.ReconOutput, error) {
 	if domain == "" {
 		return models.ReconOutput{}, errors.New("domain is required")
 	}
 	if asnProvider == nil {
-		asnProvider = &asn.MockProvider{}
+		asnProvider = &modules.MockASNProvider{}
 	}
 
 	start := time.Now()
 
-	// Factory (MVP): wires the concrete modules behind the ReconModule interface.
-	modules := []recon.ReconModule{
-		dns.New(a.resolver),
-		ip.New(a.resolver),
+	mods := []recon.ReconModule{
+		modules.NewDNS(a.resolver),
+		modules.NewIP(a.resolver),
 	}
 
-	resultsCh := make(chan ResultEnvelope, len(modules))
-	for _, m := range modules {
+	resultsCh := make(chan ResultEnvelope, len(mods))
+	for _, m := range mods {
 		m := m
 		go func() {
 			val, err := m.Run(ctx, domain)
@@ -60,7 +57,7 @@ func (a *Aggregator) Collect(ctx context.Context, domain string, asnProvider asn
 	out := models.ReconOutput{Domain: domain}
 	var dnsErr, ipErr error
 
-	for i := 0; i < len(modules); i++ {
+	for i := 0; i < len(mods); i++ {
 		env := <-resultsCh
 		switch env.Module {
 		case "dns":
@@ -68,7 +65,7 @@ func (a *Aggregator) Collect(ctx context.Context, domain string, asnProvider asn
 				dnsErr = env.Err
 				continue
 			}
-			if r, ok := env.Value.(dns.Result); ok {
+			if r, ok := env.Value.(modules.DNSResult); ok {
 				out.NS = r.NS
 			}
 		case "ip":
@@ -76,7 +73,7 @@ func (a *Aggregator) Collect(ctx context.Context, domain string, asnProvider asn
 				ipErr = env.Err
 				continue
 			}
-			if r, ok := env.Value.(ip.Result); ok {
+			if r, ok := env.Value.(modules.IPResult); ok {
 				out.IPs = r.IPs
 			}
 		default:
@@ -84,11 +81,10 @@ func (a *Aggregator) Collect(ctx context.Context, domain string, asnProvider asn
 		}
 	}
 
-	// ASN depends on IP results, so we run it after collecting IPs.
-	asnModule := asn.New(asnProvider, out.IPs)
+	asnModule := modules.NewASN(asnProvider, out.IPs)
 	asnVal, asnErr := asnModule.Run(ctx, domain)
 	if asnErr == nil {
-		if r, ok := asnVal.(asn.Result); ok {
+		if r, ok := asnVal.(modules.ASNResult); ok {
 			out.ASN = r.ASN
 		}
 	}
@@ -101,8 +97,6 @@ func (a *Aggregator) Collect(ctx context.Context, domain string, asnProvider asn
 		fmt.Sprintf("asn:%s", asnProvider.Source()),
 	}
 
-	// For MVP we tolerate partial failures: return what we could collect,
-	// and only error if everything critical failed.
 	if len(out.NS) == 0 && len(out.IPs) == 0 {
 		if ipErr != nil {
 			return out, fmt.Errorf("recon failed (ip): %w", ipErr)
@@ -115,4 +109,3 @@ func (a *Aggregator) Collect(ctx context.Context, domain string, asnProvider asn
 
 	return out, nil
 }
-
