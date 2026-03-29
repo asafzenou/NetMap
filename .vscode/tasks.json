@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "create-out-directory",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-Command", "if (-not (Test-Path 'out')) { New-Item -ItemType Directory -Name 'out' }"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent"
+      }
+    }
+  ]
+}

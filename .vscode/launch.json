@@ -1,0 +1,58 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Go Recon (example.com)",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/recongraph",
+      "env": {},
+      "args": ["-domain", "example.com", "-pretty=true"],
+      "showLog": true,
+      "trace": "verbose"
+    },
+    {
+      "name": "Debug Go Recon (with custom domain)",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/recongraph",
+      "env": {},
+      "args": ["-domain", "google.com", "-timeout", "15s", "-pretty=true"],
+      "showLog": true,
+      "trace": "verbose"
+    },
+    {
+      "name": "Debug Go Recon (file output)",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/recongraph",
+      "env": {},
+      "args": ["-domain", "github.com", "-out", "out/github.com.json", "-pretty=true"],
+      "showLog": true,
+      "trace": "verbose",
+      "preLaunchTask": "create-out-directory"
+    },
+    {
+      "name": "Debug Python Analyzer",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/analyzer/main.py",
+      "console": "integratedTerminal",
+      "args": ["--input", "out/example.com.json"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/analyzer"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Pipeline (Go + Python)",
+      "configurations": ["Debug Go Recon (example.com)", "Debug Python Analyzer"],
+      "stopOnEntry": false,
+      "preLaunchTask": "create-out-directory"
+    }
+  ]
+}
