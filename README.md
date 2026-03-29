@@ -13,8 +13,8 @@ Production-grade starter MVP that:
 
 ```mermaid
 flowchart LR
-  U[User] -->|domain| CLI[Go CLI<br/>cli/]
-  CLI --> AGG[Aggregator<br/>internal/aggregator]
+  U[User] -->|domain| CLI[Go CLI<br/>recon/cli/]
+  CLI --> AGG[Aggregator<br/>recon/engine/aggregator]
 
   AGG -->|parallel| DNS[DNSModule<br/>NS lookup]
   AGG -->|parallel| IP[IPModule<br/>A/AAAA lookup]
@@ -52,24 +52,24 @@ flowchart TB
 ```mermaid
 flowchart TB
   subgraph API[Core abstractions (Clean Architecture)]
-    RM[ReconModule interface<br/>internal/recon/module.go<br/><br/>Name() string<br/>Run(ctx, domain) (any, error)]
-    MR[ModuleResult / ResultEnvelope<br/>internal/recon + internal/aggregator]
+    RM[ReconModule interface<br/>recon/engine/recon/module.go<br/><br/>Name() string<br/>Run(ctx, domain) (any, error)]
+    MR[ModuleResult / ResultEnvelope<br/>recon/engine/recon + recon/engine/aggregator]
   end
 
   subgraph STRAT[Strategy implementations (modules)]
-    DNS[DNSModule<br/>internal/modules<br/>returns DNSResult]
-    IP[IPModule<br/>internal/modules<br/>returns IPResult]
-    ASN[ASNModule<br/>internal/modules<br/>returns ASNResult]
+    DNS[DNSModule<br/>recon/engine/modules<br/>returns DNSResult]
+    IP[IPModule<br/>recon/engine/modules<br/>returns IPResult]
+    ASN[ASNModule<br/>recon/engine/modules<br/>returns ASNResult]
   end
 
   subgraph DI[Dependency Inversion (ports/adapters)]
     RES[net.Resolver<br/>(adapter)]
     AP[ASNProvider interface<br/>(port)]
-    MOCK[MockASNProvider<br/>internal/modules]
+    MOCK[MockASNProvider<br/>recon/engine/modules]
   end
 
   subgraph ORCH[Orchestration (use-case)]
-    AGG[Aggregator.Collect()<br/>internal/aggregator]
+    AGG[Aggregator.Collect()<br/>recon/engine/aggregator]
     FACT[Module wiring "factory"<br/>(creates []ReconModule)]
     CH[(resultsCh chan ResultEnvelope)]
   end
@@ -104,11 +104,11 @@ flowchart TB
 ## Repo layout
 
 ### Go (recon engine)
-- `cli/main.go`: CLI entrypoint
-- `internal/recon`: domain-level interfaces (Strategy)
-- `internal/modules`: concrete recon modules (DNS/IP/ASN)
-- `internal/aggregator.go`: orchestration + JSON contract assembly
-- `pkg/models`: cross-layer JSON model
+- `recon/cli/main.go`: CLI entrypoint
+- `recon/engine/recon`: domain-level interfaces (Strategy)
+- `recon/engine/modules`: concrete recon modules (DNS/IP/ASN)
+- `recon/engine/aggregator.go`: orchestration + JSON contract assembly
+- `recon/pkg/models`: cross-layer JSON model
 
 ### Python (graph analyzer)
 - `analyzer/main.py`: thin entrypoint wrapper
@@ -124,7 +124,7 @@ flowchart TB
 From repo root:
 
 ```powershell
-go run .\cli\ -domain example.com
+go run .\recon\cli\ -domain example.com
 ```
 
 This prints the output path (default: `out/<domain>.json`).
@@ -132,7 +132,7 @@ This prints the output path (default: `out/<domain>.json`).
 Optional flags:
 
 ```powershell
-go run .\cli\ -domain example.com -out out\example.com.json -timeout 15s -asn-provider mock -pretty=true
+go run .\recon\cli\ -domain example.com -out out\example.com.json -timeout 15s -asn-provider mock -pretty=true
 ```
 
 ### 2) Analyze (Python) → insights + optional exports

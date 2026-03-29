@@ -7,9 +7,9 @@ import (
 	"net"
 	"time"
 
-	"recongraph/internal/modules"
-	"recongraph/internal/recon"
-	"recongraph/pkg/models"
+	"recongraph/recon/engine/modules"
+	"recongraph/recon/engine/recon"
+	"recongraph/recon/pkg/models"
 )
 
 type ResultEnvelope struct {

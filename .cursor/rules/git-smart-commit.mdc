@@ -1,0 +1,15 @@
+---
+description: Git — Smart Commit is the shared workspace default for VS Code/Cursor
+alwaysApply: true
+---
+
+# Git: Smart Commit (project standard)
+
+This repository defines **Smart Commit** in **`.vscode/settings.json`** so it applies to the whole team when the workspace is opened in VS Code or Cursor (workspace settings override personal defaults for this project).
+
+- **`git.enableSmartCommit`: `true`** — If nothing is staged, the commit action can still run; VS Code/Cursor will stage changes according to `git.smartCommitChanges` and then commit.
+- **`git.smartCommitChanges`: `all`** — Those automatic stages include all changed files. To only auto-stage **tracked** files, change this value to `"tracked"` in `.vscode/settings.json`.
+
+When helping with Git workflows in this repo, assume this behavior unless the user says otherwise.
+
+Do not tell contributors to rely on a private User `settings.json` for Smart Commit — the committed workspace file is the source of truth.

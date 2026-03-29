@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	aggregator "recongraph/internal"
-	"recongraph/internal/modules"
+	aggregator "recongraph/recon/engine"
+	"recongraph/recon/engine/modules"
 )
 
 // parseFlags parses and validates command-line arguments.

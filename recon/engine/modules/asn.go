@@ -8,7 +8,7 @@ import (
 	"net"
 	"time"
 
-	"recongraph/internal/recon"
+	"recongraph/recon/engine/recon"
 )
 
 type ASNResult struct {

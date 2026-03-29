@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"recongraph/internal/recon"
+	"recongraph/recon/engine/recon"
 )
 
 type IPResult struct {
